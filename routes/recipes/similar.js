@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Recipe = require("../../models/Recipe");
+const { pageParams } = require("../../middleware/pagination");
 
 router.get("/:id", async (req, res, next) => {
   try {
@@ -13,7 +14,13 @@ router.get("/:id", async (req, res, next) => {
     if (base.Category) q.Category = base.Category;
     if (typeof cal === "number") q["Nutrition.Calories"] = { $gte: cal - 100, $lte: cal + 100 };
 
-    const items = await Recipe.find(q).sort({ Ratings_Count: -1 }).limit(20).lean();
+    const { skip, limit } = pageParams(req);
+    const items = await Recipe.find(q)
+      .sort({ Ratings_Count: -1, Ratings: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
     res.json(items);
   } catch (e) { next(e); }
 });
